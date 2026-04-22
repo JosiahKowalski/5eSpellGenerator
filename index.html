@@ -19,7 +19,7 @@
             --card-bg: #181825;
             --bubble-empty: #11111b;
             --bubble-filled: #cba6f7;
-            --bubble-sp-filled: #f9e2af; /* Yellow for sorcery points */
+            --bubble-sp-filled: #f9e2af; 
         }
 
         body {
@@ -170,6 +170,20 @@
         .permanent .spell-link { color: var(--accent); }
         .daily .spell-link { color: var(--accent-daily); }
         .external-icon { font-size: 0.8em; opacity: 0.7; }
+        .edition-badge {
+            background-color: var(--chip-unselected);
+            color: var(--text-main);
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 12px;
+            margin-left: 8px;
+            vertical-align: middle;
+            font-weight: normal;
+        }
+        .edition-badge.xphb {
+            background-color: var(--accent-success);
+            color: #11111b;
+        }
         .empty-state { text-align: center; color: var(--text-muted); padding: 40px; font-style: italic; grid-column: 1 / -1; }
         
         .action-btn {
@@ -217,10 +231,8 @@
         <div id="file-input-container"><input type="file" id="csv-file" accept=".csv" /></div>
     </div>
 
-    <!-- DASHBOARD TAB -->
     <div id="tab-dashboard" class="tab-content active">
         
-        <!-- Character Hub -->
         <div class="character-hub">
             <div class="stats-row">
                 <div class="stat-box">
@@ -246,44 +258,37 @@
             </div>
 
             <div class="trackers-row">
-                <!-- Sorcery Points -->
                 <div class="tracker-section">
                     <div class="tracker-header">
                         <span class="tracker-title">Sorcery Points</span>
                         <button class="btn-rest" onclick="longRest()">Long Rest</button>
                     </div>
                     <div id="sp-container" class="bubble-group" style="margin-top: 15px;">
-                        <!-- Generated via JS -->
-                    </div>
+                        </div>
                 </div>
 
-                <!-- Spell Slots -->
                 <div class="tracker-section">
                     <div class="tracker-header">
                         <span class="tracker-title">Spell Slots</span>
                         <span style="font-size: 0.8rem; color: var(--text-muted);">Click to expend</span>
                     </div>
                     <div id="slots-container" style="margin-top: 10px;">
-                        <!-- Generated via JS -->
-                    </div>
+                        </div>
                 </div>
             </div>
         </div>
 
-        <!-- Search to Add Permanent Known Spells -->
         <div class="search-container">
             <input type="text" id="spell-search" class="search-input" placeholder="Search to add permanent Known Spells..." onkeyup="handleSearch()" onfocus="handleSearch()">
             <div id="search-results" class="search-results"></div>
         </div>
 
-        <!-- Permanent Known Spells -->
         <h2 class="section-header permanent">
             <span>Permanent Known Spells</span>
             <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: normal;" id="perm-count">0 Spells</span>
         </h2>
         <div class="spellbook-grid" id="permanent-container"></div>
 
-        <!-- Daily Random Spells -->
         <h2 class="section-header daily">
             <span>Daily Wild Magic Spells</span>
             <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: normal;" id="daily-count">0 Spells</span>
@@ -292,7 +297,6 @@
         
     </div>
 
-    <!-- GENERATOR TAB -->
     <div id="tab-generator" class="tab-content">
         <div style="text-align: center; margin-bottom: 20px; color: var(--text-muted);">
             <em>Clicking generate will automatically clear yesterday's random spells and apply a fresh batch to your dashboard.</em>
@@ -339,7 +343,6 @@
             usedSp: 0
         };
 
-        // Standard 5e Sorcerer Spell Slots Table
         const spellSlotsProgression = {
             1: [2,0,0,0,0,0,0,0,0], 2: [3,0,0,0,0,0,0,0,0], 3: [4,2,0,0,0,0,0,0,0],
             4: [4,3,0,0,0,0,0,0,0], 5: [4,3,2,0,0,0,0,0,0], 6: [4,3,3,0,0,0,0,0,0],
@@ -352,15 +355,12 @@
 
         const FALLBACK_SPELLS = [
             { Name: "Acid Splash", Level: "Cantrip", Source: "PHB'14", School: "Conjuration", Classes: "Artificer, Sorcerer, Wizard", "Casting Time": "1 Action", Range: "60 feet", Components: "V, S", Duration: "Instantaneous" },
-            { Name: "Fire Bolt", Level: "Cantrip", Source: "PHB'14", School: "Evocation", Classes: "Artificer, Sorcerer, Wizard", "Casting Time": "1 Action", Range: "120 feet", Components: "V, S", Duration: "Instantaneous" },
+            { Name: "Sorcerous Burst", Level: "Cantrip", Source: "XPHB", School: "Evocation", Classes: "Sorcerer", "Casting Time": "1 Action", Range: "120 feet", Components: "V, S", Duration: "Instantaneous" },
             { Name: "Mage Armor", Level: "1st", Source: "PHB'14", School: "Abjuration", Classes: "Sorcerer, Wizard", "Casting Time": "1 Action", Range: "Touch", Components: "V, S, M", Duration: "8 hours" },
-            { Name: "Shield", Level: "1st", Source: "PHB'14", School: "Abjuration", Classes: "Sorcerer, Wizard", "Casting Time": "1 Reaction", Range: "Self", Components: "V, S", Duration: "1 round" },
+            { Name: "Chromatic Orb", Level: "1st", Source: "XPHB", School: "Evocation", Classes: "Sorcerer, Wizard", "Casting Time": "1 Action", Range: "90 feet", Components: "V, S, M", Duration: "Instantaneous" },
             { Name: "Absorb Elements", Level: "1st", Source: "XGE", School: "Abjuration", Classes: "Artificer, Druid, Ranger, Sorcerer, Wizard", "Casting Time": "1 Reaction", Range: "Self", Components: "S", Duration: "1 round" },
-            { Name: "Cure Wounds", Level: "1st", Source: "PHB'14", School: "Evocation", Classes: "Artificer, Bard, Cleric, Druid, Paladin, Ranger", "Casting Time": "1 Action", Range: "Touch", Components: "V, S", Duration: "Instantaneous" },
-            { Name: "Dragon's Breath", Level: "2nd", Source: "XGE", School: "Transmutation", Classes: "Sorcerer, Wizard", "Casting Time": "1 Bonus Action", Range: "Touch", Components: "V, S, M", Duration: "Concentration, 1 min" },
             { Name: "Misty Step", Level: "2nd", Source: "PHB'14", School: "Conjuration", Classes: "Sorcerer, Warlock, Wizard", "Casting Time": "1 Bonus Action", Range: "Self", Components: "V", Duration: "Instantaneous" },
-            { Name: "Fireball", Level: "3rd", Source: "PHB'14", School: "Evocation", Classes: "Sorcerer, Wizard", "Casting Time": "1 Action", Range: "150 feet", Components: "V, S, M", Duration: "Instantaneous" },
-            { Name: "Polymorph", Level: "4th", Source: "PHB'14", School: "Transmutation", Classes: "Bard, Druid, Sorcerer, Wizard", "Casting Time": "1 Action", Range: "60 feet", Components: "V, S, M", Duration: "Concentration, 1 hr" }
+            { Name: "Fireball", Level: "3rd", Source: "PHB'14", School: "Evocation", Classes: "Sorcerer, Wizard", "Casting Time": "1 Action", Range: "150 feet", Components: "V, S, M", Duration: "Instantaneous" }
         ];
 
         const LEVELS = ["Cantrip", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"];
@@ -383,20 +383,18 @@
             
             document.getElementById('char-level').value = charData.level;
             document.getElementById('char-cha').value = charData.chaScore;
-            updateCharacter(false); // don't save immediately on load
+            updateCharacter(false); 
         }
 
         function updateCharacter(save = true) {
             charData.level = parseInt(document.getElementById('char-level').value) || 1;
             charData.chaScore = parseInt(document.getElementById('char-cha').value) || 10;
             
-            // Math
             const prof = Math.ceil(charData.level / 4) + 1;
             const chaMod = Math.floor((charData.chaScore - 10) / 2);
             const dc = 8 + prof + chaMod;
             const atk = prof + chaMod;
 
-            // Update DOM
             document.getElementById('stat-prof').textContent = `+${prof}`;
             document.getElementById('stat-dc').textContent = dc;
             document.getElementById('stat-atk').textContent = atk >= 0 ? `+${atk}` : atk;
@@ -406,7 +404,6 @@
         }
 
         function renderTrackers() {
-            // 1. Sorcery Points (Level 2+)
             const spContainer = document.getElementById('sp-container');
             const totalSp = charData.level >= 2 ? charData.level : 0;
             spContainer.innerHTML = '';
@@ -414,9 +411,7 @@
             if (totalSp === 0) {
                 spContainer.innerHTML = '<span style="color:var(--text-muted); font-size: 0.9rem;">Unlocked at Level 2</span>';
             } else {
-                // Ensure we don't have more used than max
                 if (charData.usedSp > totalSp) charData.usedSp = totalSp;
-                
                 for(let i=0; i < totalSp; i++) {
                     const isUsed = i < charData.usedSp;
                     const b = document.createElement('div');
@@ -426,7 +421,6 @@
                 }
             }
 
-            // 2. Spell Slots
             const slotsContainer = document.getElementById('slots-container');
             slotsContainer.innerHTML = '';
             const slots = spellSlotsProgression[charData.level] || spellSlotsProgression[20];
@@ -460,7 +454,6 @@
         }
 
         function toggleSp(index, currentlyUsed) {
-            // If clicking the last filled bubble, empty it. Otherwise fill up to clicked.
             if (currentlyUsed && index === charData.usedSp - 1) {
                 charData.usedSp--;
             } else {
@@ -542,10 +535,18 @@
             saveMySpells();
         }
 
+        // --- SMART URL GENERATOR FOR 2024 RULES ---
         function generate5eToolsURL(spellName, sourceCode) {
             const safeName = encodeURIComponent(spellName.toLowerCase()).replace(/'/g, "%27");
-            const safeSource = (sourceCode || "").toLowerCase().replace(/'14/g, '');
-            return `https://2014.5e.tools/spells.html#${safeName}_${safeSource}`;
+            const rawSource = (sourceCode || "").toLowerCase();
+            const safeSource = rawSource.replace(/'14/g, '');
+
+            // Check if source matches 2024 books
+            if (rawSource === 'xphb' || rawSource === 'xdmg' || rawSource === 'xmm') {
+                return `https://5e.tools/spells.html#${safeName}_${safeSource}`;
+            } else {
+                return `https://2014.5e.tools/spells.html#${safeName}_${safeSource}`;
+            }
         }
 
         function createSpellCardHTML(spellObj) {
@@ -554,12 +555,16 @@
             const safeName = s.Name.replace(/'/g, "\\'");
             const cardClass = spellObj.isDaily ? 'daily' : 'permanent';
 
+            const rawSource = (s.Source || "").toLowerCase();
+            const is2024 = (rawSource === 'xphb' || rawSource === 'xdmg' || rawSource === 'xmm');
+            const badgeHTML = is2024 ? `<span class="edition-badge xphb">2024 Edition</span>` : '';
+
             return `
                 <div class="spell-card ${cardClass}">
                     <div class="card-header">
                         <div>
                             <a href="${url}" target="_blank" class="spell-link" title="Open in 5e.tools">
-                                ${s.Name} <span class="external-icon">↗</span>
+                                ${s.Name} <span class="external-icon">↗</span> ${badgeHTML}
                             </a>
                             <div style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">
                                 ${s.Level} &nbsp;|&nbsp; ${s.School || 'Unknown School'}
