@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Spell Generator</title>
+    <title>5e Spell Generator</title>
     <!-- Using PapaParse to safely read the CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
@@ -161,7 +161,7 @@
 </head>
 <body>
 
-    <h1>Advanced Spell Generator</h1>
+    <h1>5e Spell Generator</h1>
     <div class="status-area">
         <div id="status-text" style="color: var(--text-muted);">Attempting to load Spells.csv...</div>
         <div id="file-input-container">
@@ -421,6 +421,7 @@
                                     <strong>Source:</strong> ${spell.Source || 'None'} &nbsp;|&nbsp;
                                     <strong>School:</strong> ${spell.School || 'None'} &nbsp;|&nbsp; 
                                     <strong>Classes:</strong> ${spell.Classes || 'None'} 
+                                    ${spell['Optional/Variant Classes'] ? ` <span style="opacity:0.7">(${spell['Optional/Variant Classes']})</span>` : ''}
                                 </div>
                             </div>
                         `;
