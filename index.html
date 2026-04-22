@@ -1,36 +1,117 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>General Purpose Spell Generator</title>
+    <title>Advanced Spell Generator</title>
+    <!-- Using PapaParse to safely read the CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
+        :root {
+            --bg-color: #1e1e2e;
+            --panel-bg: #313244;
+            --text-main: #cdd6f4;
+            --text-muted: #a6adc8;
+            --accent: #cba6f7;
+            --chip-unselected: #45475a;
+            --chip-included: #a6e3a1; /* Green */
+            --chip-excluded: #f38ba8; /* Red */
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1e1e2e;
-            color: #cdd6f4;
+            background-color: var(--bg-color);
+            color: var(--text-main);
             padding: 2rem;
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
+            line-height: 1.5;
         }
-        h1 { color: #89b4fa; text-align: center; }
+
+        h1 { color: #89b4fa; text-align: center; margin-bottom: 5px; }
+        .status-area { text-align: center; margin-bottom: 25px; min-height: 30px; }
+        #file-input-container { display: none; margin-top: 10px; }
+
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
             margin-bottom: 20px;
         }
+
         .panel {
-            background-color: #313244;
+            background-color: var(--panel-bg);
             padding: 1.5rem;
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
-        h3 { color: #f38ba8; margin-top: 0; border-bottom: 2px solid #45475a; padding-bottom: 5px; }
-        label { display: block; margin-bottom: 5px; cursor: pointer; }
+
+        h3 { 
+            color: #f38ba8; 
+            margin-top: 0; 
+            border-bottom: 2px solid var(--chip-unselected); 
+            padding-bottom: 5px; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Number Inputs */
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        input[type="number"] {
+            width: 50px;
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid var(--chip-unselected);
+            background: var(--bg-color);
+            color: var(--text-main);
+            text-align: center;
+        }
+
+        /* Chips */
+        .chip-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .chip {
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .chip[data-state="0"] { background-color: var(--chip-unselected); color: var(--text-main); }
+        .chip[data-state="1"] { background-color: var(--chip-included); color: #11111b; }
+        .chip[data-state="-1"] { background-color: var(--chip-excluded); color: #11111b; }
+        
+        .chip:hover { filter: brightness(1.2); transform: translateY(-1px); }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+
         .btn {
-            background-color: #cba6f7;
+            background-color: var(--accent);
             color: #11111b;
             border: none;
             padding: 15px;
@@ -41,177 +122,282 @@
             width: 100%;
             transition: 0.2s;
             margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
-        .btn:hover { background-color: #b4befe; }
+        .btn:hover:not(:disabled) { background-color: #b4befe; transform: translateY(-2px); }
+        .btn:disabled { background-color: var(--chip-unselected); color: var(--text-muted); cursor: not-allowed; transform: none; }
+
+        /* Output Formatting */
+        .level-header {
+            color: #89dceb;
+            margin-top: 25px;
+            border-bottom: 1px solid var(--chip-unselected);
+            padding-bottom: 5px;
+        }
         .spell-item {
-            background-color: #45475a;
-            margin: 5px 0;
+            background-color: var(--chip-unselected);
+            margin: 8px 0;
             padding: 15px;
-            border-radius: 6px;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent);
         }
-        .spell-meta { font-size: 0.85em; color: #a6adc8; margin-top: 5px; }
-        .status { text-align: center; color: #a6adc8; font-style: italic; margin-bottom: 15px; }
+        .spell-name { font-size: 1.15rem; font-weight: bold; color: var(--text-main); }
+        .spell-meta { font-size: 0.85rem; color: var(--text-muted); margin-top: 6px; }
     </style>
 </head>
 <body>
 
-    <h1>Spell Generator</h1>
-    <div id="status" class="status">Loading Spells.csv...</div>
-
-    <div class="grid">
-        <div class="panel">
-            <h3>Spell Levels</h3>
-            <div id="level-filters">
-                </div>
-            <br>
-            <label>Spells per level: <input type="number" id="spells-per-level" value="2" min="1" max="10" style="width: 40px;"></label>
-        </div>
-        
-        <div class="panel">
-            <h3>Classes</h3>
-            <div id="class-filters">
-                </div>
-        </div>
-
-        <div class="panel">
-            <h3>Schools of Magic</h3>
-            <div id="school-filters">
-                </div>
+    <h1>Advanced Spell Generator</h1>
+    <div class="status-area">
+        <div id="status-text" style="color: var(--text-muted);">Attempting to load Spells.csv...</div>
+        <div id="file-input-container">
+            <input type="file" id="csv-file" accept=".csv" />
         </div>
     </div>
 
-    <button class="btn" onclick="generateSpells()" id="generate-btn" disabled>Generate Spells</button>
+    <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background: var(--chip-unselected);"></div> Unselected (Any)</div>
+        <div class="legend-item"><div class="legend-dot" style="background: var(--chip-included);"></div> Included (Must Match)</div>
+        <div class="legend-item"><div class="legend-dot" style="background: var(--chip-excluded);"></div> Excluded (Remove)</div>
+    </div>
+
+    <div class="grid">
+        <!-- Settings Panel -->
+        <div class="panel">
+            <h3>Configuration</h3>
+            <div class="settings-row">
+                <label>Cantrips to Generate:</label>
+                <input type="number" id="count-cantrips" value="1" min="0" max="20">
+            </div>
+            <div class="settings-row">
+                <label>Leveled Spells to Generate:</label>
+                <input type="number" id="count-leveled" value="2" min="0" max="20">
+            </div>
+            
+            <h3 style="margin-top: 20px;">Levels</h3>
+            <div id="level-chips" class="chip-container"></div>
+        </div>
+        
+        <!-- Classes Panel -->
+        <div class="panel">
+            <h3>Classes</h3>
+            <div id="class-chips" class="chip-container"></div>
+        </div>
+
+        <!-- Schools Panel -->
+        <div class="panel">
+            <h3>Schools of Magic</h3>
+            <div id="school-chips" class="chip-container"></div>
+        </div>
+    </div>
+
+    <button class="btn" onclick="generateSpells()" id="generate-btn" disabled>Generate Daily Spells</button>
     <div id="output"></div>
 
     <script>
         let allSpells = [];
 
-        // Constants for generation
+        // Constants
         const LEVELS = ["Cantrip", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"];
         const CLASSES = ["Artificer", "Bard", "Cleric", "Druid", "Fighter", "Paladin", "Ranger", "Rogue", "Sorcerer", "Warlock", "Wizard"];
         const SCHOOLS = ["Abjuration", "Conjuration", "Divination", "Enchantment", "Evocation", "Illusion", "Necromancy", "Transmutation"];
 
-        // Initialize UI
-        function createCheckboxes(containerId, items, groupName) {
+        // State object to track chip selections (0 = neutral, 1 = included, -1 = excluded)
+        let state = {
+            levels: {},
+            classes: {},
+            schools: {}
+        };
+
+        // Initialize default states if no local storage exists
+        function initializeDefaults() {
+            LEVELS.forEach(l => state.levels[l] = 0);
+            CLASSES.forEach(c => state.classes[c] = 0);
+            SCHOOLS.forEach(s => state.schools[s] = 0);
+
+            // Default specific to Wild Magic user
+            state.levels["Cantrip"] = 1;
+            state.levels["1st"] = 1;
+            state.levels["2nd"] = 1;
+            state.levels["3rd"] = 1;
+            state.levels["4th"] = 1;
+            state.classes["Sorcerer"] = -1; // Exclude Sorcerer by default
+        }
+
+        // Render Chips into DOM
+        function renderChips(containerId, items, category) {
             const container = document.getElementById(containerId);
+            container.innerHTML = ''; // Clear
+
             items.forEach(item => {
-                const label = document.createElement('label');
-                label.innerHTML = `<input type="checkbox" name="${groupName}" value="${item}"> ${item}`;
-                container.appendChild(label);
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+                chip.textContent = item;
+                chip.dataset.state = state[category][item];
+                
+                chip.addEventListener('click', () => {
+                    // Cycle state: 0 -> 1 -> -1 -> 0
+                    let current = state[category][item];
+                    let next = current === 0 ? 1 : (current === 1 ? -1 : 0);
+                    state[category][item] = next;
+                    chip.dataset.state = next;
+                    saveSettings();
+                });
+                
+                container.appendChild(chip);
             });
         }
 
-        createCheckboxes('level-filters', LEVELS, 'level');
-        createCheckboxes('class-filters', CLASSES, 'class');
-        createCheckboxes('school-filters', SCHOOLS, 'school');
-
-        // State Management via LocalStorage
+        // Save & Load LocalStorage
         function saveSettings() {
             const settings = {
-                levels: Array.from(document.querySelectorAll('input[name="level"]:checked')).map(cb => cb.value),
-                classes: Array.from(document.querySelectorAll('input[name="class"]:checked')).map(cb => cb.value),
-                schools: Array.from(document.querySelectorAll('input[name="school"]:checked')).map(cb => cb.value),
-                count: document.getElementById('spells-per-level').value
+                state: state,
+                countCantrips: document.getElementById('count-cantrips').value,
+                countLeveled: document.getElementById('count-leveled').value
             };
-            localStorage.setItem('spellGenSettings', JSON.stringify(settings));
+            localStorage.setItem('spellGenSettingsV2', JSON.stringify(settings));
         }
 
         function loadSettings() {
-            const saved = localStorage.getItem('spellGenSettings');
+            const saved = localStorage.getItem('spellGenSettingsV2');
+            initializeDefaults(); // Start with defaults
+
             if (saved) {
-                const settings = JSON.parse(saved);
-                settings.levels.forEach(val => {
-                    const cb = document.querySelector(`input[name="level"][value="${val}"]`);
-                    if (cb) cb.checked = true;
-                });
-                settings.classes.forEach(val => {
-                    const cb = document.querySelector(`input[name="class"][value="${val}"]`);
-                    if (cb) cb.checked = true;
-                });
-                settings.schools.forEach(val => {
-                    const cb = document.querySelector(`input[name="school"][value="${val}"]`);
-                    if (cb) cb.checked = true;
-                });
-                if (settings.count) document.getElementById('spells-per-level').value = settings.count;
-            } else {
-                // Defaults
-                document.querySelector('input[name="level"][value="Cantrip"]').checked = true;
-                document.querySelector('input[name="level"][value="1st"]').checked = true;
+                try {
+                    const parsed = JSON.parse(saved);
+                    state = { ...state, ...parsed.state }; // Merge saved states
+                    if (parsed.countCantrips) document.getElementById('count-cantrips').value = parsed.countCantrips;
+                    if (parsed.countLeveled) document.getElementById('count-leveled').value = parsed.countLeveled;
+                } catch (e) {
+                    console.error("Could not parse saved settings.", e);
+                }
             }
+            
+            // Initial Render
+            renderChips('level-chips', LEVELS, 'levels');
+            renderChips('class-chips', CLASSES, 'classes');
+            renderChips('school-chips', SCHOOLS, 'schools');
         }
 
-        // Add event listeners to save settings when changed
-        document.querySelectorAll('input').forEach(input => {
-            input.addEventListener('change', saveSettings);
+        // Listen for number input changes to save
+        document.getElementById('count-cantrips').addEventListener('change', saveSettings);
+        document.getElementById('count-leveled').addEventListener('change', saveSettings);
+
+        // --- CSV Loading Logic ---
+        function handleCSVData(data) {
+            allSpells = data.filter(spell => spell.Name); // Filter out empty rows
+            document.getElementById('status-text').innerHTML = `<span style="color: var(--chip-included);">Successfully loaded ${allSpells.length} spells!</span>`;
+            document.getElementById('generate-btn').disabled = false;
+        }
+
+        function attemptAutoFetch() {
+            Papa.parse("Spells.csv", {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    // Sometimes GitHub pages returns HTML (a 404 page) if file not found, which parses weirdly
+                    if (results.data.length > 0 && results.data[0].Name !== undefined) {
+                        handleCSVData(results.data);
+                    } else {
+                        showManualUpload();
+                    }
+                },
+                error: function() {
+                    showManualUpload();
+                }
+            });
+        }
+
+        function showManualUpload() {
+            document.getElementById('status-text').innerHTML = `<span style="color: var(--chip-excluded);">Could not auto-load Spells.csv. Please select it manually:</span>`;
+            document.getElementById('file-input-container').style.display = 'block';
+        }
+
+        document.getElementById('csv-file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            Papa.parse(file, {
+                header: true,
+                complete: function(results) {
+                    handleCSVData(results.data);
+                    document.getElementById('file-input-container').style.display = 'none';
+                }
+            });
         });
 
-        // Fetch and parse CSV
-        Papa.parse("Spells.csv", {
-            download: true,
-            header: true,
-            complete: function(results) {
-                allSpells = results.data.filter(spell => spell.Name); // Filter out empty rows
-                document.getElementById('status').innerText = `Loaded ${allSpells.length} spells.`;
-                document.getElementById('generate-btn').disabled = false;
-                loadSettings();
-            },
-            error: function(err) {
-                document.getElementById('status').innerText = "Error loading Spells.csv. Make sure it's in the same directory and hosted on a server.";
-            }
-        });
-
-        // Generation Logic
+        // --- Filter and Generate Logic ---
         function generateSpells() {
             const output = document.getElementById('output');
             output.innerHTML = '';
 
-            const activeLevels = Array.from(document.querySelectorAll('input[name="level"]:checked')).map(cb => cb.value);
-            const activeClasses = Array.from(document.querySelectorAll('input[name="class"]:checked')).map(cb => cb.value);
-            const activeSchools = Array.from(document.querySelectorAll('input[name="school"]:checked')).map(cb => cb.value);
-            const countPerLevel = parseInt(document.getElementById('spells-per-level').value, 10);
+            const cantripsCount = parseInt(document.getElementById('count-cantrips').value, 10) || 0;
+            const leveledCount = parseInt(document.getElementById('count-leveled').value, 10) || 0;
 
-            if (activeLevels.length === 0) {
-                output.innerHTML = '<p style="color: #f38ba8;">Please select at least one Spell Level.</p>';
+            // Get arrays of selected/excluded tags from state
+            const includedLevels = Object.keys(state.levels).filter(k => state.levels[k] === 1);
+            
+            const includedClasses = Object.keys(state.classes).filter(k => state.classes[k] === 1);
+            const excludedClasses = Object.keys(state.classes).filter(k => state.classes[k] === -1);
+            
+            const includedSchools = Object.keys(state.schools).filter(k => state.schools[k] === 1);
+            const excludedSchools = Object.keys(state.schools).filter(k => state.schools[k] === -1);
+
+            if (includedLevels.length === 0) {
+                output.innerHTML = '<p style="color: var(--chip-excluded); text-align: center;">Please select at least one Spell Level to include.</p>';
                 return;
             }
 
-            activeLevels.forEach(level => {
-                // Filter spells based on selections
+            includedLevels.forEach(level => {
+                // Determine how many spells to pull for this level
+                const numToPull = level === 'Cantrip' ? cantripsCount : leveledCount;
+                if (numToPull <= 0) return; // Skip if user set count to 0
+
+                // Filter spells for this specific level
                 let pool = allSpells.filter(spell => spell.Level === level);
 
-                // Filter by Class (if any classes are selected, spell must belong to at least one)
-                if (activeClasses.length > 0) {
-                    pool = pool.filter(spell => {
-                        if (!spell.Classes) return false;
-                        return activeClasses.some(cls => spell.Classes.includes(cls));
-                    });
-                }
+                // Apply Exclusions First (Strict)
+                pool = pool.filter(spell => {
+                    let spellClasses = (spell.Classes || "") + " " + (spell['Optional/Variant Classes'] || "");
+                    let spellSchool = spell.School || "";
 
-                // Filter by School (if any are selected, spell must match)
-                if (activeSchools.length > 0) {
-                    pool = pool.filter(spell => {
-                        if (!spell.School) return false;
-                        return activeSchools.some(school => spell.School.includes(school));
-                    });
-                }
+                    // If spell has any excluded class, drop it
+                    if (excludedClasses.some(cls => spellClasses.includes(cls))) return false;
+                    // If spell has any excluded school, drop it
+                    if (excludedSchools.some(sch => spellSchool.includes(sch))) return false;
 
-                // Render UI
+                    return true;
+                });
+
+                // Apply Inclusions (Must match AT LEAST ONE if any are selected)
+                pool = pool.filter(spell => {
+                    let spellClasses = (spell.Classes || "") + " " + (spell['Optional/Variant Classes'] || "");
+                    let spellSchool = spell.School || "";
+
+                    if (includedClasses.length > 0 && !includedClasses.some(cls => spellClasses.includes(cls))) return false;
+                    if (includedSchools.length > 0 && !includedSchools.some(sch => spellSchool.includes(sch))) return false;
+
+                    return true;
+                });
+
+                // Render Results
                 const groupDiv = document.createElement('div');
-                groupDiv.innerHTML = `<h3 style="margin-top:20px;">${level} (${pool.length} available)</h3>`;
+                groupDiv.innerHTML = `<h2 class="level-header">${level} <span style="font-size:0.6em; color:var(--text-muted); font-weight:normal;">(${pool.length} available)</span></h2>`;
 
                 if (pool.length === 0) {
                     groupDiv.innerHTML += `<p class="spell-meta">No spells match your exact filters for this level.</p>`;
                 } else {
                     // Shuffle and pick
                     const shuffled = pool.sort(() => 0.5 - Math.random());
-                    const selected = shuffled.slice(0, countPerLevel);
+                    const selected = shuffled.slice(0, numToPull);
 
                     selected.forEach(spell => {
                         groupDiv.innerHTML += `
                             <div class="spell-item">
-                                <strong>${spell.Name}</strong>
+                                <div class="spell-name">${spell.Name}</div>
                                 <div class="spell-meta">
-                                    School: ${spell.School} | Classes: ${spell.Classes}
+                                    <strong>School:</strong> ${spell.School || 'None'} &nbsp;|&nbsp; 
+                                    <strong>Classes:</strong> ${spell.Classes || 'None'} 
+                                    ${spell['Optional/Variant Classes'] ? ` <span style="opacity:0.7">(${spell['Optional/Variant Classes']})</span>` : ''}
                                 </div>
                             </div>
                         `;
@@ -220,7 +406,10 @@
                 output.appendChild(groupDiv);
             });
         }
+
+        // Initialize UI on load
+        loadSettings();
+        attemptAutoFetch();
     </script>
 </body>
 </html>
-
