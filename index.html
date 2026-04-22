@@ -141,7 +141,21 @@
             border-radius: 8px;
             border-left: 4px solid var(--accent);
         }
-        .spell-name { font-size: 1.15rem; font-weight: bold; color: var(--text-main); }
+        
+        /* Interactive Links */
+        .spell-link { 
+            font-size: 1.15rem; 
+            font-weight: bold; 
+            color: var(--accent); 
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s;
+        }
+        .spell-link:hover { color: #b4befe; text-decoration: underline; }
+        .external-icon { font-size: 0.8em; opacity: 0.7; }
+        
         .spell-meta { font-size: 0.85rem; color: var(--text-muted); margin-top: 6px; }
     </style>
 </head>
@@ -295,7 +309,6 @@
                 download: true,
                 header: true,
                 complete: function(results) {
-                    // Sometimes GitHub pages returns HTML (a 404 page) if file not found, which parses weirdly
                     if (results.data.length > 0 && results.data[0].Name !== undefined) {
                         handleCSVData(results.data);
                     } else {
@@ -325,6 +338,17 @@
             });
         });
 
+        // --- URL Generator Logic ---
+        function generate5eToolsURL(spellName, sourceCode) {
+            // Encode the name for the URL. Replace single quotes manually just in case.
+            const safeName = encodeURIComponent(spellName.toLowerCase()).replace(/'/g, "%27");
+            
+            // Clean up the source. Removes "'14" so "PHB'14" becomes "phb".
+            const safeSource = (sourceCode || "").toLowerCase().replace(/'14/g, '');
+            
+            return `https://2014.5e.tools/spells.html#${safeName}_${safeSource}`;
+        }
+
         // --- Filter and Generate Logic ---
         function generateSpells() {
             const output = document.getElementById('output');
@@ -348,11 +372,9 @@
             }
 
             includedLevels.forEach(level => {
-                // Determine how many spells to pull for this level
                 const numToPull = level === 'Cantrip' ? cantripsCount : leveledCount;
                 if (numToPull <= 0) return; // Skip if user set count to 0
 
-                // Filter spells for this specific level
                 let pool = allSpells.filter(spell => spell.Level === level);
 
                 // Apply Exclusions First (Strict)
@@ -360,9 +382,7 @@
                     let spellClasses = (spell.Classes || "") + " " + (spell['Optional/Variant Classes'] || "");
                     let spellSchool = spell.School || "";
 
-                    // If spell has any excluded class, drop it
                     if (excludedClasses.some(cls => spellClasses.includes(cls))) return false;
-                    // If spell has any excluded school, drop it
                     if (excludedSchools.some(sch => spellSchool.includes(sch))) return false;
 
                     return true;
@@ -386,18 +406,21 @@
                 if (pool.length === 0) {
                     groupDiv.innerHTML += `<p class="spell-meta">No spells match your exact filters for this level.</p>`;
                 } else {
-                    // Shuffle and pick
                     const shuffled = pool.sort(() => 0.5 - Math.random());
                     const selected = shuffled.slice(0, numToPull);
 
                     selected.forEach(spell => {
+                        const spellUrl = generate5eToolsURL(spell.Name, spell.Source);
+                        
                         groupDiv.innerHTML += `
                             <div class="spell-item">
-                                <div class="spell-name">${spell.Name}</div>
+                                <a href="${spellUrl}" target="_blank" class="spell-link" title="Open in 5e.tools">
+                                    ${spell.Name} <span class="external-icon">↗</span>
+                                </a>
                                 <div class="spell-meta">
+                                    <strong>Source:</strong> ${spell.Source || 'None'} &nbsp;|&nbsp;
                                     <strong>School:</strong> ${spell.School || 'None'} &nbsp;|&nbsp; 
                                     <strong>Classes:</strong> ${spell.Classes || 'None'} 
-                                    ${spell['Optional/Variant Classes'] ? ` <span style="opacity:0.7">(${spell['Optional/Variant Classes']})</span>` : ''}
                                 </div>
                             </div>
                         `;
