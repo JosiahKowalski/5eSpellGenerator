@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -14,6 +15,7 @@
             --accent-daily: #89dceb;
             --accent-danger: #f38ba8;
             --accent-success: #a6e3a1;
+            --accent-warning: #f9e2af;
             --chip-unselected: #45475a;
             --card-bg: #181825;
             --bubble-empty: #11111b;
@@ -68,9 +70,7 @@
             padding: 15px;
             border-radius: 8px;
         }
-        .stat-box {
-            display: flex; flex-direction: column; align-items: center; text-align: center;
-        }
+        .stat-box { display: flex; flex-direction: column; align-items: center; text-align: center; }
         .stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
         .stat-value { font-size: 1.5rem; font-weight: bold; color: var(--accent); }
         .stat-input {
@@ -80,18 +80,10 @@
         }
 
         /* Trackers */
-        .trackers-row {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 20px;
-        }
+        .trackers-row { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
         @media (max-width: 800px) { .trackers-row { grid-template-columns: 1fr; } }
         
-        .tracker-section {
-            background: var(--card-bg);
-            padding: 15px;
-            border-radius: 8px;
-        }
+        .tracker-section { background: var(--card-bg); padding: 15px; border-radius: 8px; }
         .tracker-header {
             display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 10px; border-bottom: 1px solid var(--chip-unselected); padding-bottom: 5px;
@@ -170,26 +162,21 @@
         .daily .spell-link { color: var(--accent-daily); }
         .external-icon { font-size: 0.8em; opacity: 0.7; }
         .edition-badge {
-            background-color: var(--chip-unselected);
-            color: var(--text-main);
-            font-size: 0.7rem;
-            padding: 2px 6px;
-            border-radius: 12px;
-            margin-left: 8px;
-            vertical-align: middle;
-            font-weight: normal;
+            background-color: var(--chip-unselected); color: var(--text-main);
+            font-size: 0.7rem; padding: 2px 6px; border-radius: 12px;
+            margin-left: 8px; vertical-align: middle; font-weight: normal;
         }
-        .edition-badge.xphb {
-            background-color: var(--accent-success);
-            color: #11111b;
-        }
+        .edition-badge.xphb { background-color: var(--accent-success); color: #11111b; }
         .empty-state { text-align: center; color: var(--text-muted); padding: 40px; font-style: italic; grid-column: 1 / -1; }
         
+        .action-btns { display: flex; gap: 8px; }
         .action-btn {
             border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; transition: 0.2s;
         }
         .remove-btn { background-color: var(--accent-danger); color: #11111b; }
         .remove-btn:hover { filter: brightness(1.1); }
+        .reroll-btn { background-color: var(--accent-warning); color: #11111b; }
+        .reroll-btn:hover { filter: brightness(1.1); }
 
         /* Generator Settings */
         .gen-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px; }
@@ -214,6 +201,16 @@
         }
         .btn-large:hover:not(:disabled) { background-color: #b4befe; transform: translateY(-2px); }
         .btn-large:disabled { background-color: var(--chip-unselected); color: var(--text-muted); cursor: not-allowed; transform: none; }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: var(--panel-bg); color: var(--text-main);
+            padding: 12px 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+            border-left: 4px solid var(--accent); font-weight: bold;
+        }
+        .toast.show { opacity: 1; }
     </style>
 </head>
 <body>
@@ -230,8 +227,10 @@
         <div id="file-input-container"><input type="file" id="csv-file" accept=".csv" /></div>
     </div>
 
+    <!-- DASHBOARD TAB -->
     <div id="tab-dashboard" class="tab-content active">
         
+        <!-- Character Hub -->
         <div class="character-hub">
             <div class="stats-row">
                 <div class="stat-box">
@@ -257,37 +256,40 @@
             </div>
 
             <div class="trackers-row">
+                <!-- Sorcery Points -->
                 <div class="tracker-section">
                     <div class="tracker-header">
                         <span class="tracker-title">Sorcery Points</span>
                         <button class="btn-rest" onclick="longRest()">Long Rest</button>
                     </div>
-                    <div id="sp-container" class="bubble-group" style="margin-top: 15px;">
-                        </div>
+                    <div id="sp-container" class="bubble-group" style="margin-top: 15px;"></div>
                 </div>
 
+                <!-- Spell Slots -->
                 <div class="tracker-section">
                     <div class="tracker-header">
                         <span class="tracker-title">Spell Slots</span>
                         <span style="font-size: 0.8rem; color: var(--text-muted);">Click to expend</span>
                     </div>
-                    <div id="slots-container" style="margin-top: 10px;">
-                        </div>
+                    <div id="slots-container" style="margin-top: 10px;"></div>
                 </div>
             </div>
         </div>
 
+        <!-- Search to Add Permanent Known Spells -->
         <div class="search-container">
             <input type="text" id="spell-search" class="search-input" placeholder="Search to add permanent Known Spells..." onkeyup="handleSearch()" onfocus="handleSearch()">
             <div id="search-results" class="search-results"></div>
         </div>
 
+        <!-- Permanent Known Spells -->
         <h2 class="section-header permanent">
             <span>Permanent Known Spells</span>
             <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: normal;" id="perm-count">0 Spells</span>
         </h2>
         <div class="spellbook-grid" id="permanent-container"></div>
 
+        <!-- Daily Random Spells -->
         <h2 class="section-header daily">
             <span>Daily Wild Magic Spells</span>
             <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: normal;" id="daily-count">0 Spells</span>
@@ -296,6 +298,7 @@
         
     </div>
 
+    <!-- GENERATOR TAB -->
     <div id="tab-generator" class="tab-content">
         <div style="text-align: center; margin-bottom: 20px; color: var(--text-muted);">
             <em>Clicking generate will automatically clear yesterday's random spells and apply a fresh batch to your dashboard.</em>
@@ -304,6 +307,10 @@
         <div class="gen-grid">
             <div class="panel">
                 <h3>Configuration</h3>
+                <div class="settings-row" style="justify-content: flex-start; gap: 10px;">
+                    <input type="checkbox" id="filter-weapon" onchange="saveSettings()" style="width: 18px; height: 18px; cursor: pointer;">
+                    <label for="filter-weapon" style="cursor: pointer;">Exclude spells requiring a weapon</label>
+                </div>
                 <div class="settings-row">
                     <label>Cantrips per Level:</label>
                     <input type="number" id="count-cantrips" value="1" min="0" max="20" class="stat-input" style="width:50px;">
@@ -330,14 +337,16 @@
         <button class="btn-large" onclick="generateDailySpells()" id="generate-btn" disabled>🎲 Reroll & Apply Daily Spells</button>
     </div>
 
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">Message</div>
+
     <script>
         let allSpells = [];
         let mySpells = []; 
 
         // Character Data State
         let charData = {
-            level: 1,
-            chaScore: 16,
+            level: 1, chaScore: 16,
             usedSlots: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0 },
             usedSp: 0
         };
@@ -354,6 +363,7 @@
 
         const FALLBACK_SPELLS = [
             { Name: "Acid Splash", Level: "Cantrip", Source: "PHB'14", School: "Conjuration", Classes: "Artificer, Sorcerer, Wizard", "Casting Time": "1 Action", Range: "60 feet", Components: "V, S", Duration: "Instantaneous" },
+            { Name: "Booming Blade", Level: "Cantrip", Source: "SCAG", School: "Evocation", Classes: "Sorcerer, Warlock, Wizard", "Casting Time": "1 Action", Range: "Self (5-foot radius)", Components: "S, M (a melee weapon worth at least 1 sp)", Duration: "1 round" },
             { Name: "Sorcerous Burst", Level: "Cantrip", Source: "XPHB", School: "Evocation", Classes: "Sorcerer", "Casting Time": "1 Action", Range: "120 feet", Components: "V, S", Duration: "Instantaneous" },
             { Name: "Mage Armor", Level: "1st", Source: "PHB'14", School: "Abjuration", Classes: "Sorcerer, Wizard", "Casting Time": "1 Action", Range: "Touch", Components: "V, S, M", Duration: "8 hours" },
             { Name: "Chromatic Orb", Level: "1st", Source: "XPHB", School: "Evocation", Classes: "Sorcerer, Wizard", "Casting Time": "1 Action", Range: "90 feet", Components: "V, S, M", Duration: "Instantaneous" },
@@ -367,7 +377,7 @@
         const SCHOOLS = ["Abjuration", "Conjuration", "Divination", "Enchantment", "Evocation", "Illusion", "Necromancy", "Transmutation"];
         let state = { levels: {}, classes: {}, schools: {} };
 
-        // --- Core UI & Tabs ---
+        // --- Core UI & Helpers ---
         function switchTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -375,11 +385,18 @@
             document.getElementById(`tab-${tabId}`).classList.add('active');
         }
 
+        function showToast(msg, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.borderLeftColor = type === 'error' ? 'var(--accent-danger)' : 'var(--accent)';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
         // --- Character Hub Logic ---
         function loadCharacter() {
             const saved = localStorage.getItem('charDataV1');
             if (saved) charData = { ...charData, ...JSON.parse(saved) };
-            
             document.getElementById('char-level').value = charData.level;
             document.getElementById('char-cha').value = charData.chaScore;
             updateCharacter(false); 
@@ -391,12 +408,10 @@
             
             const prof = Math.ceil(charData.level / 4) + 1;
             const chaMod = Math.floor((charData.chaScore - 10) / 2);
-            const dc = 8 + prof + chaMod;
-            const atk = prof + chaMod;
-
+            
             document.getElementById('stat-prof').textContent = `+${prof}`;
-            document.getElementById('stat-dc').textContent = dc;
-            document.getElementById('stat-atk').textContent = atk >= 0 ? `+${atk}` : atk;
+            document.getElementById('stat-dc').textContent = 8 + prof + chaMod;
+            document.getElementById('stat-atk').textContent = (prof + chaMod) >= 0 ? `+${prof + chaMod}` : (prof + chaMod);
 
             renderTrackers();
             if (save) localStorage.setItem('charDataV1', JSON.stringify(charData));
@@ -433,7 +448,6 @@
                     
                     const group = document.createElement('div');
                     group.className = 'bubble-group';
-                    
                     const label = document.createElement('div');
                     label.className = 'bubble-level-label';
                     label.textContent = `Lvl ${level}`;
@@ -453,55 +467,36 @@
         }
 
         function toggleSp(index, currentlyUsed) {
-            if (currentlyUsed && index === charData.usedSp - 1) {
-                charData.usedSp--;
-            } else {
-                charData.usedSp = index + 1;
-            }
-            localStorage.setItem('charDataV1', JSON.stringify(charData));
-            renderTrackers();
+            charData.usedSp = (currentlyUsed && index === charData.usedSp - 1) ? charData.usedSp - 1 : index + 1;
+            localStorage.setItem('charDataV1', JSON.stringify(charData)); renderTrackers();
         }
 
         function toggleSlot(level, index, currentlyUsed) {
-            if (currentlyUsed && index === charData.usedSlots[level] - 1) {
-                charData.usedSlots[level]--;
-            } else {
-                charData.usedSlots[level] = index + 1;
-            }
-            localStorage.setItem('charDataV1', JSON.stringify(charData));
-            renderTrackers();
+            charData.usedSlots[level] = (currentlyUsed && index === charData.usedSlots[level] - 1) ? charData.usedSlots[level] - 1 : index + 1;
+            localStorage.setItem('charDataV1', JSON.stringify(charData)); renderTrackers();
         }
 
         function longRest() {
-            charData.usedSp = 0;
-            Object.keys(charData.usedSlots).forEach(k => charData.usedSlots[k] = 0);
-            localStorage.setItem('charDataV1', JSON.stringify(charData));
-            renderTrackers();
+            charData.usedSp = 0; Object.keys(charData.usedSlots).forEach(k => charData.usedSlots[k] = 0);
+            localStorage.setItem('charDataV1', JSON.stringify(charData)); renderTrackers();
         }
 
         // --- Search Logic ---
         function handleSearch() {
             const query = document.getElementById('spell-search').value.toLowerCase();
             const resultsBox = document.getElementById('search-results');
+            if (query.length < 2) { resultsBox.style.display = 'none'; return; }
             
-            if (query.length < 2) {
-                resultsBox.style.display = 'none';
-                return;
-            }
             const currentNames = mySpells.map(s => s.name);
-            const matches = allSpells.filter(s => 
-                s.Name.toLowerCase().includes(query) && !currentNames.includes(s.Name)
-            ).slice(0, 8);
+            const matches = allSpells.filter(s => s.Name.toLowerCase().includes(query) && !currentNames.includes(s.Name)).slice(0, 8);
 
             if (matches.length === 0) {
                 resultsBox.innerHTML = '<div class="search-item"><span class="search-meta">No new spells found.</span></div>';
             } else {
                 resultsBox.innerHTML = matches.map(s => {
                     const safeName = s.Name.replace(/'/g, "\\'");
-                    return `
-                    <div class="search-item" onclick="addPermanentSpell('${safeName}')">
-                        <strong>${s.Name}</strong>
-                        <span class="search-meta">${s.Level} | ${s.Classes.split(',')[0] || 'Any'}</span>
+                    return `<div class="search-item" onclick="addPermanentSpell('${safeName}')">
+                        <strong>${s.Name}</strong><span class="search-meta">${s.Level} | ${s.Classes.split(',')[0] || 'Any'}</span>
                     </div>`;
                 }).join('');
             }
@@ -513,11 +508,11 @@
 
         // --- Spell Dashboard Data ---
         function loadMySpells() {
-            const saved = localStorage.getItem('mySpellsData');
+            const saved = localStorage.getItem('mySpellsDataV2');
             if (saved) mySpells = JSON.parse(saved);
         }
         function saveMySpells() {
-            localStorage.setItem('mySpellsData', JSON.stringify(mySpells));
+            localStorage.setItem('mySpellsDataV2', JSON.stringify(mySpells));
             renderDashboard();
         }
         function addPermanentSpell(spellName) {
@@ -534,13 +529,10 @@
             saveMySpells();
         }
 
-        // --- SMART URL GENERATOR FOR 2024 RULES ---
         function generate5eToolsURL(spellName, sourceCode) {
             const safeName = encodeURIComponent(spellName.toLowerCase()).replace(/'/g, "%27");
             const rawSource = (sourceCode || "").toLowerCase();
             const safeSource = rawSource.replace(/'14/g, '');
-
-            // Check if source matches 2024 books
             if (rawSource === 'xphb' || rawSource === 'xdmg' || rawSource === 'xmm') {
                 return `https://5e.tools/spells.html#${safeName}_${safeSource}`;
             } else {
@@ -554,9 +546,13 @@
             const safeName = s.Name.replace(/'/g, "\\'");
             const cardClass = spellObj.isDaily ? 'daily' : 'permanent';
 
-            const rawSource = (s.Source || "").toLowerCase();
-            const is2024 = (rawSource === 'xphb' || rawSource === 'xdmg' || rawSource === 'xmm');
+            const is2024 = ((s.Source || "").toLowerCase() === 'xphb');
             const badgeHTML = is2024 ? `<span class="edition-badge xphb">2024 Edition</span>` : '';
+            
+            const actionBtns = spellObj.isDaily 
+                ? `<button class="action-btn reroll-btn" onclick="rerollDailySpell('${safeName}', '${s.Level}')">↻ Reroll</button>
+                   <button class="action-btn remove-btn" onclick="removeSpell('${safeName}')">Drop</button>`
+                : `<button class="action-btn remove-btn" onclick="removeSpell('${safeName}')">Drop</button>`;
 
             return `
                 <div class="spell-card ${cardClass}">
@@ -569,7 +565,7 @@
                                 ${s.Level} &nbsp;|&nbsp; ${s.School || 'Unknown School'}
                             </div>
                         </div>
-                        <button class="action-btn remove-btn" onclick="removeSpell('${safeName}')">Drop</button>
+                        <div class="action-btns">${actionBtns}</div>
                     </div>
                     <div class="card-details">
                         <div><strong>Time:</strong> ${s['Casting Time'] || 'Unknown'}</div>
@@ -596,51 +592,64 @@
             document.getElementById('perm-count').textContent = `${perms.length} Spells`;
             document.getElementById('daily-count').textContent = `${dailies.length} Spells`;
 
-            permContainer.innerHTML = perms.length > 0 
-                ? perms.map(createSpellCardHTML).join('')
-                : '<div class="empty-state">Use the search bar above to add your permanent Sorcerer spells here.</div>';
-
-            dailyContainer.innerHTML = dailies.length > 0
-                ? dailies.map(createSpellCardHTML).join('')
-                : '<div class="empty-state">No daily spells assigned. Go to the Generator tab to roll today\'s spells!</div>';
+            permContainer.innerHTML = perms.length > 0 ? perms.map(createSpellCardHTML).join('') : '<div class="empty-state">Use the search bar above to add your permanent Known Spells here.</div>';
+            dailyContainer.innerHTML = dailies.length > 0 ? dailies.map(createSpellCardHTML).join('') : '<div class="empty-state">No daily spells assigned. Go to the Generator tab to roll today\'s spells!</div>';
         }
 
 
-        // --- Generator Settings & Logic ---
+        // --- Generator Settings & Shared Logic ---
         function initializeDefaults() {
             LEVELS.forEach(l => state.levels[l] = 0); CLASSES.forEach(c => state.classes[c] = 0); SCHOOLS.forEach(s => state.schools[s] = 0);
             state.levels["Cantrip"] = 1; state.levels["1st"] = 1; state.levels["2nd"] = 1; state.levels["3rd"] = 1; state.levels["4th"] = 1;
-            state.classes["Sorcerer"] = -1; // Exclude Sorcerer by default
+            state.classes["Sorcerer"] = -1; 
         }
 
+        // Two-state logic for levels, Three-state for everything else
         function renderChips(containerId, items, category) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
+            const isLevel = category === 'levels';
+
             items.forEach(item => {
                 const chip = document.createElement('div');
-                chip.className = 'chip'; chip.textContent = item; chip.dataset.state = state[category][item];
+                chip.className = 'chip'; 
+                chip.textContent = item; 
+                chip.dataset.state = state[category][item];
+                
                 chip.addEventListener('click', () => {
-                    let current = state[category][item];
-                    let next = current === 0 ? 1 : (current === 1 ? -1 : 0);
-                    state[category][item] = next; chip.dataset.state = next; saveSettings();
+                    if (isLevel) {
+                        // Toggle 0 and 1 only
+                        state[category][item] = state[category][item] === 1 ? 0 : 1;
+                    } else {
+                        // Cycle 0, 1, -1
+                        state[category][item] = state[category][item] === 0 ? 1 : (state[category][item] === 1 ? -1 : 0);
+                    }
+                    chip.dataset.state = state[category][item]; 
+                    saveSettings();
                 });
                 container.appendChild(chip);
             });
         }
 
         function saveSettings() {
-            const settings = { state: state, countCantrips: document.getElementById('count-cantrips').value, countLeveled: document.getElementById('count-leveled').value };
-            localStorage.setItem('spellGenSettingsV3', JSON.stringify(settings));
+            const settings = { 
+                state: state, 
+                countCantrips: document.getElementById('count-cantrips').value, 
+                countLeveled: document.getElementById('count-leveled').value,
+                excludeWeapon: document.getElementById('filter-weapon').checked
+            };
+            localStorage.setItem('spellGenSettingsV4', JSON.stringify(settings));
         }
 
         function loadSettings() {
-            const saved = localStorage.getItem('spellGenSettingsV3');
+            const saved = localStorage.getItem('spellGenSettingsV4');
             initializeDefaults();
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved); state = { ...state, ...parsed.state };
                     if (parsed.countCantrips) document.getElementById('count-cantrips').value = parsed.countCantrips;
                     if (parsed.countLeveled) document.getElementById('count-leveled').value = parsed.countLeveled;
+                    if (parsed.excludeWeapon !== undefined) document.getElementById('filter-weapon').checked = parsed.excludeWeapon;
                 } catch (e) {}
             }
             renderChips('level-chips', LEVELS, 'levels'); renderChips('class-chips', CLASSES, 'classes'); renderChips('school-chips', SCHOOLS, 'schools');
@@ -649,44 +658,82 @@
         document.getElementById('count-cantrips').addEventListener('change', saveSettings);
         document.getElementById('count-leveled').addEventListener('change', saveSettings);
 
-        function generateDailySpells() {
-            const cantripsCount = parseInt(document.getElementById('count-cantrips').value, 10) || 0;
-            const leveledCount = parseInt(document.getElementById('count-leveled').value, 10) || 0;
-
-            const includedLevels = Object.keys(state.levels).filter(k => state.levels[k] === 1);
+        // Core Filter Logic shared by both the Generator and the Reroll button
+        function getAvailableSpellsForLevel(level, spellToExclude = null) {
+            const excludeWeapon = document.getElementById('filter-weapon').checked;
             const includedClasses = Object.keys(state.classes).filter(k => state.classes[k] === 1);
             const excludedClasses = Object.keys(state.classes).filter(k => state.classes[k] === -1);
             const includedSchools = Object.keys(state.schools).filter(k => state.schools[k] === 1);
             const excludedSchools = Object.keys(state.schools).filter(k => state.schools[k] === -1);
 
-            if (includedLevels.length === 0) { alert("Please select at least one Spell Level to include."); return; }
+            return allSpells.filter(spell => {
+                if (spell.Level !== level) return false;
+                if (mySpells.some(savedSpell => savedSpell.name === spell.Name)) return false; // Already have it
+                if (spellToExclude && spell.Name === spellToExclude) return false; // Explicitly block the rerolled spell
 
-            // Remove previous dailies
-            mySpells = mySpells.filter(s => !s.isDaily);
+                // Weapon Filter
+                if (excludeWeapon && spell.Components && spell.Components.toLowerCase().includes('weapon')) return false;
 
-            // Filter pool
-            let globalPool = allSpells.filter(spell => {
-                if (mySpells.some(savedSpell => savedSpell.name === spell.Name)) return false;
                 let spellClasses = (spell.Classes || "") + " " + (spell['Optional/Variant Classes'] || "");
                 let spellSchool = spell.School || "";
+                
                 if (excludedClasses.some(cls => spellClasses.includes(cls))) return false;
                 if (excludedSchools.some(sch => spellSchool.includes(sch))) return false;
                 if (includedClasses.length > 0 && !includedClasses.some(cls => spellClasses.includes(cls))) return false;
                 if (includedSchools.length > 0 && !includedSchools.some(sch => spellSchool.includes(sch))) return false;
                 return true;
             });
+        }
+
+        function generateDailySpells() {
+            const cantripsCount = parseInt(document.getElementById('count-cantrips').value, 10) || 0;
+            const leveledCount = parseInt(document.getElementById('count-leveled').value, 10) || 0;
+            const includedLevels = Object.keys(state.levels).filter(k => state.levels[k] === 1);
+
+            if (includedLevels.length === 0) { showToast("Please select at least one Spell Level to include.", "error"); return; }
+
+            // Wipe out old daily spells
+            mySpells = mySpells.filter(s => !s.isDaily);
 
             includedLevels.forEach(level => {
                 const numToPull = level === 'Cantrip' ? cantripsCount : leveledCount;
                 if (numToPull <= 0) return;
-                let pool = globalPool.filter(spell => spell.Level === level);
+                
+                let pool = getAvailableSpellsForLevel(level);
                 const shuffled = pool.sort(() => 0.5 - Math.random());
                 const selected = shuffled.slice(0, numToPull);
+                
                 selected.forEach(spell => { mySpells.push({ name: spell.Name, isDaily: true, spellData: spell }); });
             });
 
             saveMySpells();
             switchTab('dashboard');
+            showToast("Daily Spells Generated!");
+        }
+
+        // --- Individual Reroll ---
+        function rerollDailySpell(oldSpellName, level) {
+            // Temporarily pull the old spell out of the list so it doesn't block itself, though we're replacing it anyway
+            const oldIndex = mySpells.findIndex(s => s.name === oldSpellName);
+            const oldSpellObj = mySpells[oldIndex];
+            mySpells.splice(oldIndex, 1);
+
+            // Pass the oldSpellName so the filter explicitly rejects it
+            let pool = getAvailableSpellsForLevel(level, oldSpellName);
+
+            if (pool.length === 0) {
+                // Put it back, show warning
+                mySpells.push(oldSpellObj);
+                saveMySpells(); // Re-render just in case
+                showToast("No other spells match your current generator filters for this level!", "error");
+                return;
+            }
+
+            // Grab a new one
+            const newSpell = pool[Math.floor(Math.random() * pool.length)];
+            mySpells.push({ name: newSpell.Name, isDaily: true, spellData: newSpell });
+            saveMySpells();
+            showToast(`Replaced with ${newSpell.Name}`);
         }
 
         // --- CSV Loading Logic ---
@@ -724,6 +771,7 @@
                 }
             });
         }
+        
         document.getElementById('csv-file').addEventListener('change', function(e) {
             const file = e.target.files[0]; if (!file) return;
             Papa.parse(file, { header: true, complete: function(results) { handleCSVData(results.data); } });
